@@ -12,4 +12,9 @@ class TaskProvider with ChangeNotifier {
     final newTask = Task(id: DateTime.now().toString(), title: title, description: description, createdAt: DateTime.now());
     _storage.addTask(newTask); _tasks.add(newTask); notifyListeners(); 
   }
+  void deleteTask(String id) {
+    _storage.deleteTask(id);
+    _tasks.removeWhere((t) => t.id == id);
+    notifyListeners();
+  }
 }

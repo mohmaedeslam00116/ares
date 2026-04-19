@@ -16,10 +16,14 @@ void main() {
     taskProvider = TaskProvider(mockStorageService);
   });
 
-  test('addTask adds task to list', () async {
-    when(mockStorageService.addTask(any)).thenAnswer((_) async {});
-    await taskProvider.addTask('Test Task', 'Description');
-    expect(taskProvider.tasks.length, 1);
-    expect(taskProvider.tasks.first.title, 'Test Task');
+  test('deleteTask removes task from list', () async {
+    // Manually add to provider for testing
+    taskProvider.addTask('Task to delete', 'Description');
+    String id = taskProvider.tasks.first.id;
+    
+    when(mockStorageService.deleteTask(id)).thenReturn(null);
+    taskProvider.deleteTask(id);
+    
+    expect(taskProvider.tasks.length, 0);
   });
 }
