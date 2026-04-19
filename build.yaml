@@ -1,0 +1,5 @@
+targets:
+  $default:
+    builders:
+      hive_generator:source_gen|part_cleanup:
+        enabled: true
