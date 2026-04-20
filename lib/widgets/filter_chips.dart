@@ -12,7 +12,7 @@ class FilterChips extends StatelessWidget {
       builder: (context, provider, _) {
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           child: Row(
             children: [
               _FilterChip(
@@ -21,14 +21,14 @@ class FilterChips extends StatelessWidget {
                 isSelected: provider.filter == TaskFilter.all,
                 onTap: () => provider.setFilter(TaskFilter.all),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               _FilterChip(
                 label: 'Pending',
                 count: provider.pendingCount,
                 isSelected: provider.filter == TaskFilter.pending,
                 onTap: () => provider.setFilter(TaskFilter.pending),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSpacing.sm),
               _FilterChip(
                 label: 'Completed',
                 count: provider.completedCount,
@@ -62,10 +62,22 @@ class _FilterChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: AppRadius.chipRadius,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -82,9 +94,9 @@ class _FilterChip extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: isSelected 
-                  ? Colors.white.withOpacity(0.2)
-                  : AppColors.surfaceOverlay,
+                color: isSelected
+                    ? Colors.white.withOpacity(0.2)
+                    : AppColors.surfaceOverlay,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(

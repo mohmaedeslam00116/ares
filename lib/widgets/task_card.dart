@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
 import '../models/task.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../screens/edit_task_screen.dart';
 
 class TaskCard extends StatefulWidget {
   final Task task;
+  final Animation<double>? animation;
 
-  const TaskCard({super.key, required this.task});
+  const TaskCard({
+    super.key,
+    required this.task,
+    this.animation,
+  });
 
   @override
   State<TaskCard> createState() => _TaskCardState();
@@ -23,10 +29,10 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 150),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.97).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
   }
@@ -37,19 +43,42 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
+  // Calculate due date status
+  Color _getDueDateColor() {
+    if (widget.task.dueDate == null) return AppColors.textTertiary;
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(widget.task.dueDate!.year, widget.task.dueDate!.month, widget.task.dueDate!.day);
+    final diff = dueDay.difference(today).inDays;
+
+    if (diff < 0) return AppColors.error; // Overdue
+    if (diff == 0) return AppColors.warning; // Today
+    if (diff <= 3) return AppColors.priorityMedium; // Soon
+    return AppColors.textTertiary;
+  }
+
+  String _getDueDateText() {
+    if (widget.task.dueDate == null) return '';
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(widget.task.dueDate!.year, widget.task.dueDate!.month, widget.task.dueDate!.day);
+    final diff = dueDay.difference(today).inDays;
+
+    if (diff < 0) return '${-diff}d overdue';
+    if (diff == 0) return 'Today';
+    if (diff == 1) return 'Tomorrow';
+    if (diff <= 7) return 'In $diff days';
+    return DateFormat('MMM d').format(widget.task.dueDate!);
+  }
+
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
-        title: const Text(
-          'Delete Task',
-          style: TextStyle(color: AppColors.textPrimary),
-        ),
-        content: Text(
-          'Are you sure you want to delete "${widget.task.title}"?',
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
+        title: const Text('Delete Task'),
+        content: Text('Are you sure you want to delete "${widget.task.title}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -68,24 +97,6 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
     );
   }
 
-  Color _getPriorityColor() {
-    switch (widget.task.priority.toLowerCase()) {
-      case 'high':
-        return AppColors.priorityHigh;
-      case 'low':
-        return AppColors.priorityLow;
-      case 'medium':
-      default:
-        return AppColors.priorityMedium;
-    }
-  }
-
-  void _onCheckboxTap(TaskProvider provider) async {
-    await _animationController.forward();
-    await provider.toggleTask(widget.task.id);
-    await _animationController.reverse();
-  }
-
   void _navigateToEdit() {
     HapticFeedback.lightImpact();
     Navigator.push(
@@ -96,292 +107,238 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
     );
   }
 
+  Future<void> _toggleComplete(TaskProvider provider) async {
+    await _animationController.forward();
+    await provider.toggleTask(widget.task.id);
+    await _animationController.reverse();
+  }
+
+  Widget _buildCard(TaskProvider provider) {
+    final isCompleted = widget.task.isCompleted;
+    final priorityColor = AppColors.getPriorityColor(widget.task.priority);
+    final dueDateColor = _getDueDateColor();
+    final dueDateText = _getDueDateText();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm / 2),
+      decoration: BoxDecoration(
+        color: isCompleted ? AppColors.cardBackgroundCompleted : AppColors.cardBackground,
+        borderRadius: AppRadius.cardRadius,
+        border: Border(
+          left: BorderSide(color: priorityColor, width: 4),
+        ),
+        boxShadow: AppShadows.cardShadow,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _navigateToEdit,
+          borderRadius: AppRadius.cardRadius,
+          child: Padding(
+            padding: AppSpacing.cardPadding,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Checkbox
+                GestureDetector(
+                  onTap: () => _toggleComplete(provider),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: isCompleted ? AppColors.success : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      border: Border.all(
+                        color: isCompleted ? AppColors.success : AppColors.checkboxBorder,
+                        width: 2,
+                      ),
+                    ),
+                    child: isCompleted
+                        ? const Icon(Icons.check, color: Colors.white, size: 16)
+                        : null,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+
+                // Content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 200),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
+                          decoration: isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+                          decorationColor: AppColors.textSecondary,
+                        ),
+                        child: Text(
+                          widget.task.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+
+                      // Description
+                      if (widget.task.description.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          widget.task.description,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isCompleted
+                                ? AppColors.textSecondary.withOpacity(0.5)
+                                : AppColors.textSecondary,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+
+                      // Due date
+                      if (dueDateText.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Row(
+                          children: [
+                            Icon(Icons.schedule, size: 14, color: dueDateColor),
+                            const SizedBox(width: 4),
+                            Text(
+                              dueDateText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: dueDateColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            // Priority badge
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: priorityColor.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                              ),
+                              child: Text(
+                                AppColors.getPriorityLabel(widget.task.priority),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: priorityColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Menu
+                IconButton(
+                  onPressed: () => _showDeleteConfirmation(context),
+                  icon: const Icon(Icons.more_vert, size: 20),
+                  color: AppColors.textTertiary,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<TaskProvider>(
-      builder: (context, provider, child) {
-        final isCompleted = widget.task.isCompleted;
+      builder: (context, provider, _) {
+        final card = _buildCard(provider);
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Dismissible(
-            key: Key(widget.task.id),
-            direction: DismissDirection.endToStart,
-            confirmDismiss: (direction) async {
-              _showDeleteConfirmation(context);
-              return false;
-            },
-            background: Container(
-              decoration: BoxDecoration(
-                color: AppColors.error.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20),
-              child: const Icon(
-                Icons.delete_outline,
-                color: AppColors.error,
-                size: 28,
+        // Apply animation if provided (for list animations)
+        if (widget.animation != null) {
+          return SizeTransition(
+            sizeFactor: widget.animation!,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(1, 0),
+                end: Offset.zero,
+              ).animate(widget.animation!),
+              child: FadeTransition(
+                opacity: widget.animation!,
+                child: card,
               ),
             ),
-            child: AnimatedBuilder(
-              animation: _animationController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _scaleAnimation.value,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    decoration: BoxDecoration(
-                      color: isCompleted
-                          ? AppColors.cardBackgroundCompleted
-                          : AppColors.cardBackground,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border(
-                        left: BorderSide(
-                          color: _getPriorityColor(),
-                          width: 4,
-                        ),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isCompleted ? 0.05 : 0.15),
-                          blurRadius: isCompleted ? 4 : 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: _navigateToEdit,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Checkbox
-                              GestureDetector(
-                                onTap: () => _onCheckboxTap(provider),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  width: 26,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    color: isCompleted
-                                        ? AppColors.success
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: isCompleted
-                                          ? AppColors.success
-                                          : AppColors.checkboxBorder,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: isCompleted
-                                      ? const Icon(
-                                          Icons.check,
-                                          color: Colors.white,
-                                          size: 18,
-                                        )
-                                      : null,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              // Content
-                              Expanded(
-                                child: AnimatedDefaultTextStyle(
-                                  duration: const Duration(milliseconds: 200),
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                    color: isCompleted
-                                        ? AppColors.textSecondary
-                                        : AppColors.textPrimary,
-                                    decoration: isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : TextDecoration.none,
-                                    decorationColor: AppColors.textSecondary,
-                                  ),
-                                  child: Text(
-                                    widget.task.title,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          );
+        }
+
+        // Apply scale animation
+        return ScaleTransition(
+          scale: _scaleAnimation,
+          child: card,
         );
       },
     );
   }
 }
 
-/// Placeholder widget for building inside AnimatedBuilder
-class AnimatedBuilder extends StatelessWidget {
-  final Animation<double> animation;
-  final Widget Function(BuildContext, Widget?) builder;
+// Swipeable wrapper for task card
+class SwipeableTaskCard extends StatelessWidget {
+  final Task task;
+  final Animation<double>? animation;
 
-  const AnimatedBuilder({
+  const SwipeableTaskCard({
     super.key,
-    required this.animation,
-    required this.builder,
+    required this.task,
+    this.animation,
   });
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder2(
-      animation: animation,
-      builder: builder,
-    );
-  }
-}
-
-class AnimatedBuilder2 extends AnimatedWidget {
-  final Widget Function(BuildContext, Widget?) builder;
-
-  const AnimatedBuilder2({
-    super.key,
-    required Animation<double> animation,
-    required this.builder,
-  }) : super(listenable: animation);
-
-  @override
-  Widget build(BuildContext context) {
-    return builder(context, null);
-  }
-}
-
-// Extension to add the additional fields display
-extension TaskCardContent on TaskCard {
-  static Widget buildContent({
-    required BuildContext context,
-    required Task task,
-    required bool isCompleted,
-    required Color dueDateColor,
-    required String dueDateText,
-    required Color priorityColor,
-    required VoidCallback onCheckboxTap,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Checkbox
-                  GestureDetector(
-                    onTap: onCheckboxTap,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      width: 26,
-                      height: 26,
-                      decoration: BoxDecoration(
-                        color: isCompleted ? AppColors.success : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: isCompleted
-                              ? AppColors.success
-                              : AppColors.checkboxBorder,
-                          width: 2,
-                        ),
-                      ),
-                      child: isCompleted
-                          ? const Icon(Icons.check, color: Colors.white, size: 18)
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  // Title
-                  Expanded(
-                    child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 200),
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: isCompleted
-                            ? AppColors.textSecondary
-                            : AppColors.textPrimary,
-                        decoration: isCompleted
-                            ? TextDecoration.lineThrough
-                            : TextDecoration.none,
-                        decorationColor: AppColors.textSecondary,
-                      ),
-                      child: Text(
-                        task.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                ],
+    return Dismissible(
+      key: Key(task.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (direction) async {
+        // Show confirmation dialog instead of direct delete
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Delete Task'),
+            content: Text('Are you sure you want to delete "${task.title}"?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
               ),
-              // Description
-              if (task.description.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 40),
-                  child: Text(
-                    task.description,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isCompleted
-                          ? AppColors.textSecondary.withOpacity(0.6)
-                          : AppColors.textSecondary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-              // Due date
-              if (dueDateText.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Padding(
-                  padding: const EdgeInsets.only(left: 40),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.schedule,
-                        size: 14,
-                        color: dueDateColor,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        dueDateText,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: dueDateColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  context.read<TaskProvider>().deleteTask(task.id);
+                },
+                style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                child: const Text('Delete'),
+              ),
             ],
           ),
+        );
+        return false;
+      },
+      background: Container(
+        margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm / 2),
+        decoration: BoxDecoration(
+          color: AppColors.error.withOpacity(0.2),
+          borderRadius: AppRadius.cardRadius,
         ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        child: const Icon(Icons.delete_outline, color: AppColors.error, size: 28),
       ),
+      child: TaskCard(task: task, animation: animation),
     );
   }
 }

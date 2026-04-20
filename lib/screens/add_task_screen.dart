@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../providers/task_provider.dart';
+import '../theme/app_theme.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -13,15 +15,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  
+
   DateTime? _selectedDueDate;
   String _selectedPriority = 'medium';
   bool _isLoading = false;
-
-  // Colors from theme
-  static const Color _primaryColor = Color(0xFFE53935);
-  static const Color _surfaceColor = Color(0xFF1E1E1E);
-  static const Color _backgroundColor = Color(0xFF121212);
 
   @override
   void dispose() {
@@ -40,15 +37,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.dark(
-              primary: _primaryColor,
-              surface: _surfaceColor,
+              primary: AppColors.primary,
+              surface: AppColors.surface,
             ),
           ),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDueDate) {
       setState(() {
         _selectedDueDate = picked;
@@ -60,32 +57,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     setState(() {
       _selectedDueDate = null;
     });
-  }
-
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'high':
-        return Colors.red;
-      case 'medium':
-        return Colors.orange;
-      case 'low':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _getPriorityLabel(String priority) {
-    switch (priority) {
-      case 'high':
-        return 'High';
-      case 'medium':
-        return 'Medium';
-      case 'low':
-        return 'Low';
-      default:
-        return priority;
-    }
   }
 
   Future<void> _submitTask() async {
@@ -110,7 +81,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(provider.error ?? 'Failed to add task'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -126,10 +97,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: AppColors.scaffoldBackground,
       appBar: AppBar(
         title: const Text('Add Task'),
-        backgroundColor: _surfaceColor,
+        backgroundColor: AppColors.surface,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close),
@@ -137,7 +108,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: AppSpacing.screenPadding,
         child: Form(
           key: _formKey,
           child: Column(
@@ -151,27 +122,27 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   hintText: 'Enter task title',
                   prefixIcon: const Icon(Icons.title),
                   filled: true,
-                  fillColor: _surfaceColor,
+                  fillColor: AppColors.surfaceElevated,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppRadius.inputRadius,
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _primaryColor, width: 2),
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
                   errorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 1),
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: const BorderSide(color: AppColors.error, width: 1),
                   ),
                   focusedErrorBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.red, width: 2),
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: const BorderSide(color: AppColors.error, width: 2),
                   ),
-                  labelStyle: TextStyle(color: Colors.grey[400]),
-                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintStyle: const TextStyle(color: AppColors.textTertiary),
                 ),
-                style: const TextStyle(color: Colors.white, fontSize: 16),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
@@ -183,7 +154,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg),
 
               // Description Field
               TextFormField(
@@ -193,47 +164,44 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   hintText: 'Enter task description (optional)',
                   prefixIcon: const Icon(Icons.description),
                   filled: true,
-                  fillColor: _surfaceColor,
+                  fillColor: AppColors.surfaceElevated,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppRadius.inputRadius,
                     borderSide: BorderSide.none,
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: _primaryColor, width: 2),
+                    borderRadius: AppRadius.inputRadius,
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
                   ),
-                  labelStyle: TextStyle(color: Colors.grey[400]),
-                  hintStyle: TextStyle(color: Colors.grey[600]),
+                  labelStyle: const TextStyle(color: AppColors.textSecondary),
+                  hintStyle: const TextStyle(color: AppColors.textTertiary),
                 ),
-                style: const TextStyle(color: Colors.white, fontSize: 16),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
                 maxLines: 4,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg),
 
               // Due Date Section
-              Text(
-                'Due Date',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+              _SectionHeader(
+                icon: Icons.calendar_today,
+                title: 'Due Date',
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               _selectedDueDate != null
-                  ? Wrap(
-                      spacing: 8,
+                  ? Row(
                       children: [
-                        Chip(
-                          label: Text(
-                            '${_selectedDueDate!.day}/${_selectedDueDate!.month}/${_selectedDueDate!.year}',
-                            style: const TextStyle(color: Colors.white),
+                        Expanded(
+                          child: Chip(
+                            label: Text(
+                              DateFormat('MMM d, yyyy').format(_selectedDueDate!),
+                              style: const TextStyle(color: AppColors.textPrimary),
+                            ),
+                            backgroundColor: AppColors.primary.withOpacity(0.2),
+                            deleteIcon: const Icon(Icons.close, size: 18, color: AppColors.textPrimary),
+                            onDeleted: _clearDueDate,
+                            side: const BorderSide(color: AppColors.primary),
                           ),
-                          backgroundColor: _primaryColor.withOpacity(0.3),
-                          deleteIcon: const Icon(Icons.close, size: 18, color: Colors.white),
-                          onDeleted: _clearDueDate,
-                          side: const BorderSide(color: _primaryColor),
                         ),
                       ],
                     )
@@ -242,34 +210,31 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       icon: const Icon(Icons.calendar_today),
                       label: const Text('Select Due Date'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: _primaryColor,
-                        side: const BorderSide(color: _primaryColor),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: AppSpacing.md),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: AppRadius.buttonRadius,
                         ),
                       ),
                     ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
 
               // Priority Section
-              Text(
-                'Priority',
-                style: TextStyle(
-                  color: Colors.grey[400],
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+              _SectionHeader(
+                icon: Icons.flag,
+                title: 'Priority',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Wrap(
-                spacing: 12,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
                 children: ['low', 'medium', 'high'].map((priority) {
                   final isSelected = _selectedPriority == priority;
-                  final color = _getPriorityColor(priority);
+                  final color = AppColors.getPriorityColor(priority);
                   return ChoiceChip(
                     label: Text(
-                      _getPriorityLabel(priority),
+                      AppColors.getPriorityLabel(priority),
                       style: TextStyle(
                         color: isSelected ? Colors.white : color,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -277,7 +242,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     ),
                     selected: isSelected,
                     selectedColor: color,
-                    backgroundColor: _surfaceColor,
+                    backgroundColor: AppColors.surfaceElevated,
                     side: BorderSide(color: color, width: isSelected ? 2 : 1),
                     onSelected: (selected) {
                       if (selected) {
@@ -289,7 +254,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   );
                 }).toList(),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: AppSpacing.xxl),
 
               // Submit Button
               SizedBox(
@@ -297,11 +262,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submitTask,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _primaryColor,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: _primaryColor.withOpacity(0.5),
+                    disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.buttonRadius,
                     ),
                     elevation: 4,
                   ),
@@ -327,6 +292,35 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+// Helper widget for section headers
+class _SectionHeader extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _SectionHeader({
+    required this.icon,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: AppColors.textSecondary),
+        const SizedBox(width: AppSpacing.sm),
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
     );
   }
 }

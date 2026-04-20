@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../models/task.dart';
 import '../providers/task_provider.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 
 class EditTaskScreen extends StatefulWidget {
   final Task task;
@@ -246,7 +247,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                     const SizedBox(width: 12),
                     Text(
                       _selectedDueDate != null
-                          ? '${_selectedDueDate!.day}/${_selectedDueDate!.month}/${_selectedDueDate!.year}'
+                          ? DateFormat('MMM d, yyyy').format(_selectedDueDate!)
                           : 'Select due date',
                       style: TextStyle(
                         color: _selectedDueDate != null

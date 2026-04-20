@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 
 class AppSearchBar extends StatefulWidget {
   final TextEditingController controller;
+
   const AppSearchBar({super.key, required this.controller});
 
   @override
@@ -25,25 +26,56 @@ class _AppSearchBarState extends State<AppSearchBar> {
   }
 
   void _onSearchChanged() {
-    context.read<TaskProvider>().setSearch(widget.controller.text);
+    // Use addPostFrameCallback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TaskProvider>().setSearch(widget.controller.text);
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
-      decoration: InputDecoration(
-        hintText: 'Search tasks...',
-        prefixIcon: const Icon(Icons.search, color: AppColors.textTertiary, size: 20),
-        suffixIcon: widget.controller.text.isNotEmpty
-          ? IconButton(
-              icon: const Icon(Icons.clear, color: AppColors.textTertiary, size: 18),
-              onPressed: () {
-                widget.controller.clear();
-              },
-            )
-          : null,
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: AppRadius.inputRadius,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: TextField(
+        controller: widget.controller,
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 15),
+        decoration: InputDecoration(
+          hintText: 'Search tasks...',
+          prefixIcon: const Icon(
+            Icons.search,
+            color: AppColors.textTertiary,
+            size: 20,
+          ),
+          suffixIcon: widget.controller.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.clear,
+                    color: AppColors.textTertiary,
+                    size: 18,
+                  ),
+                  onPressed: () {
+                    widget.controller.clear();
+                  },
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 14,
+          ),
+        ),
       ),
     );
   }
