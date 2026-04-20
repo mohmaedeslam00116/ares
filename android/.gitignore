@@ -1,0 +1,22 @@
+# Flutter-specific
+.gradle/
+build/
+local.properties
+
+# IntelliJ
+*.iml
+.idea/
+
+# Gradle
+*.class
+*.jar
+*.ap_
+*.apk
+
+# Generated files
+gen/
+out/
+
+# Miscellaneous
+.captures/
+.intermediates/
