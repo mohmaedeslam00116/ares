@@ -123,7 +123,6 @@ class TaskProvider extends ChangeNotifier {
       final index = _tasks.indexWhere((t) => t.id == id);
       if (index == -1) return false;
       final task = _tasks[index];
-      final oldCompleted = task.isCompleted;
       task.title = title.trim();
       task.description = description.trim();
       task.dueDate = dueDate;

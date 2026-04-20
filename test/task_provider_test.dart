@@ -1,29 +1,35 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
 import 'package:ares/providers/task_provider.dart';
-import 'package:ares/services/storage_service.dart';
-import 'package:ares/models/task.dart';
-
-class MockStorageService extends Mock implements StorageService {}
 
 void main() {
-  late TaskProvider taskProvider;
-  late MockStorageService mockStorageService;
+  group('TaskProvider', () {
+    test('initial state has empty tasks', () {
+      final provider = TaskProvider();
+      expect(provider.tasks, isEmpty);
+    });
 
-  setUp(() {
-    mockStorageService = MockStorageService();
-    // Assuming constructor handles loading
-    taskProvider = TaskProvider(mockStorageService);
-  });
+    test('addTask adds task to list', () async {
+      final provider = TaskProvider();
+      await provider.addTask(title: 'Test Task', description: 'Test Description');
+      expect(provider.tasks.length, 1);
+      expect(provider.tasks.first.title, 'Test Task');
+    });
 
-  test('deleteTask removes task from list', () async {
-    // Manually add to provider for testing
-    taskProvider.addTask('Task to delete', 'Description');
-    String id = taskProvider.tasks.first.id;
-    
-    when(mockStorageService.deleteTask(id)).thenReturn(null);
-    taskProvider.deleteTask(id);
-    
-    expect(taskProvider.tasks.length, 0);
+    test('deleteTask removes task from list', () async {
+      final provider = TaskProvider();
+      await provider.addTask(title: 'Test Task', description: 'Test Description');
+      final id = provider.tasks.first.id;
+      await provider.deleteTask(id);
+      expect(provider.tasks, isEmpty);
+    });
+
+    test('toggleTask flips completion status', () async {
+      final provider = TaskProvider();
+      await provider.addTask(title: 'Test Task', description: 'Test Description');
+      final id = provider.tasks.first.id;
+      expect(provider.tasks.first.isCompleted, false);
+      await provider.toggleTask(id);
+      expect(provider.tasks.first.isCompleted, true);
+    });
   });
 }

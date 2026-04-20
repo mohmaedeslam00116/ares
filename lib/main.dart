@@ -30,7 +30,7 @@ void main() async {
   } catch (e) {
     // Handle initialization errors
     debugPrint('Initialization error: $e');
-    runApp(const ErrorApp(errorMessage: 'Failed to initialize app: $e'));
+    runApp(ErrorApp(errorMessage: 'Failed to initialize app: $e'));
   }
 }
 

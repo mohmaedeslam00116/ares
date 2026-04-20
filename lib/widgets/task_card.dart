@@ -18,7 +18,6 @@ class TaskCard extends StatefulWidget {
 class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
 
   @override
   void initState() {
@@ -28,9 +27,6 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
       vsync: this,
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _opacityAnimation = Tween<double>(begin: 1.0, end: 0.6).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
   }
@@ -82,41 +78,6 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
       default:
         return AppColors.priorityMedium;
     }
-  }
-
-  String _formatDueDate(DateTime? dueDate) {
-    if (dueDate == null) return '';
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
-    final difference = due.difference(today).inDays;
-
-    if (difference < 0) {
-      return 'Overdue by ${-difference} day${-difference == 1 ? '' : 's'}';
-    } else if (difference == 0) {
-      return 'Due today';
-    } else if (difference == 1) {
-      return 'Due tomorrow';
-    } else if (difference <= 7) {
-      return 'Due in $difference days';
-    } else {
-      return 'Due ${dueDate.day}/${dueDate.month}/${dueDate.year}';
-    }
-  }
-
-  Color _getDueDateColor(DateTime? dueDate) {
-    if (dueDate == null) return AppColors.textSecondary;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final due = DateTime(dueDate.year, dueDate.month, dueDate.day);
-    final difference = due.difference(today).inDays;
-
-    if (difference < 0) {
-      return AppColors.error;
-    } else if (difference == 0) {
-      return AppColors.warning;
-    }
-    return AppColors.textSecondary;
   }
 
   void _onCheckboxTap(TaskProvider provider) async {

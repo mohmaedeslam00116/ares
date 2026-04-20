@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
-import '../theme/app_theme.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -231,7 +230,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             '${_selectedDueDate!.day}/${_selectedDueDate!.month}/${_selectedDueDate!.year}',
                             style: const TextStyle(color: Colors.white),
                           ),
-                          backgroundColor: _primaryColor.withValues(alpha: 0.3),
+                          backgroundColor: _primaryColor.withOpacity(0.3),
                           deleteIcon: const Icon(Icons.close, size: 18, color: Colors.white),
                           onDeleted: _clearDueDate,
                           side: const BorderSide(color: _primaryColor),
@@ -300,7 +299,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryColor,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: _primaryColor.withValues(alpha: 0.5),
+                    disabledBackgroundColor: _primaryColor.withOpacity(0.5),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
