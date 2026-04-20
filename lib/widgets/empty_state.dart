@@ -46,74 +46,19 @@ class EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
 
-            // Subtitle - Fixed: Using separate Text widgets for multiline
-            ..._buildSubtitle(),
+            // Subtitle
+            Text(
+              _getSubtitle(),
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
     );
-  }
-
-  List<Widget> _buildSubtitle() {
-    if (searchQuery.isNotEmpty) {
-      return [
-        const Text(
-          'Try a different search term',
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ];
-    }
-
-    switch (filter) {
-      case TaskFilter.pending:
-        return [
-          const Text(
-            'You have no pending tasks.',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'Enjoy your free time! 🎉',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.success,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ];
-      case TaskFilter.completed:
-        return [
-          const Text(
-            'Complete some tasks to see them here',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ];
-      case TaskFilter.all:
-      default:
-        return [
-          const Text(
-            'Tap the + button to create your first task',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ];
-    }
   }
 
   IconData _getIcon() {
@@ -139,6 +84,21 @@ class EmptyState extends StatelessWidget {
       case TaskFilter.all:
       default:
         return 'No tasks yet';
+    }
+  }
+
+  String _getSubtitle() {
+    if (searchQuery.isNotEmpty) {
+      return 'Try a different search term';
+    }
+    switch (filter) {
+      case TaskFilter.pending:
+        return 'You have no pending tasks.\nEnjoy your free time!';
+      case TaskFilter.completed:
+        return 'Complete some tasks to see them here';
+      case TaskFilter.all:
+      default:
+        return 'Tap the + button to create your first task';
     }
   }
 }

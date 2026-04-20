@@ -23,13 +23,7 @@ class Task extends HiveObject {
   DateTime? dueDate;
 
   @HiveField(6)
-  String priority;
-
-  @HiveField(7)
-  String? category;
-
-  @HiveField(8)
-  List<String> tags;
+  String priority; // low, medium, high
 
   Task({
     required this.id,
@@ -39,30 +33,13 @@ class Task extends HiveObject {
     required this.createdAt,
     this.dueDate,
     this.priority = 'medium',
-    this.category,
-    List<String>? tags,
-  }) : tags = tags ?? [] {
-    // Lenient validation for title
+  }) {
     if (title.isEmpty) {
-      this.title = 'Untitled Task';
+      throw ArgumentError('Title cannot be empty');
     }
-    // Validate priority
     if (!['low', 'medium', 'high'].contains(priority)) {
-      this.priority = 'medium';
+      throw ArgumentError('Priority must be low, medium, or high');
     }
-  }
-
-  // Simple setters with validation
-  set title(String value) {
-    title = value.isEmpty ? 'Untitled Task' : value;
-  }
-
-  set priority(String value) {
-    priority = ['low', 'medium', 'high'].contains(value) ? value : 'medium';
-  }
-
-  set tags(List<String> value) {
-    tags = value ?? [];
   }
 
   Task copyWith({
@@ -74,8 +51,6 @@ class Task extends HiveObject {
     DateTime? dueDate,
     String? priority,
     bool clearDueDate = false,
-    String? category,
-    List<String>? tags,
   }) {
     return Task(
       id: id ?? this.id,
@@ -85,8 +60,6 @@ class Task extends HiveObject {
       createdAt: createdAt ?? this.createdAt,
       dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
       priority: priority ?? this.priority,
-      category: category ?? this.category,
-      tags: tags ?? List.from(this.tags),
     );
   }
 
@@ -100,8 +73,7 @@ class Task extends HiveObject {
         other.isCompleted == isCompleted &&
         other.createdAt == createdAt &&
         other.dueDate == dueDate &&
-        other.priority == priority &&
-        other.category == category;
+        other.priority == priority;
   }
 
   @override
@@ -114,7 +86,6 @@ class Task extends HiveObject {
       createdAt,
       dueDate,
       priority,
-      category,
     );
   }
 
@@ -122,6 +93,6 @@ class Task extends HiveObject {
   String toString() {
     return 'Task(id: $id, title: $title, description: $description, '
         'isCompleted: $isCompleted, createdAt: $createdAt, '
-        'dueDate: $dueDate, priority: $priority, category: $category, tags: $tags)';
+        'dueDate: $dueDate, priority: $priority)';
   }
 }
