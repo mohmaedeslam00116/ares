@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
@@ -18,27 +15,15 @@ jobs:
         with:
           flutter-version: '3.24.0'
           channel: 'stable'
-          cache: true
 
-      - run: flutter pub get
-
-      - name: Generate Hive Adapters
-        run: flutter pub run build_runner build --delete-conflicting-outputs
-
-      - name: Analyze Code
-        run: flutter analyze
+      - name: Install Dependencies
+        run: flutter pub get
 
       - name: Build Debug APK
         run: flutter build apk --debug
 
-      - name: Build Release APK
-        run: flutter build apk --release --obfuscate --split-debug-info=build/debug-info
-
-      - name: Upload APKs
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: ares-apk-${{ github.run_number }}
-          path: |
-            build/app/outputs/flutter-apk/app-debug.apk
-            build/app/outputs/flutter-apk/app-release.apk
-          retention-days: 14
+          name: ares-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
