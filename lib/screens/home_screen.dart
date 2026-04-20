@@ -7,6 +7,7 @@ import '../widgets/search_bar.dart';
 import '../widgets/filter_chips.dart';
 import '../widgets/empty_state.dart';
 import 'add_task_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
+  int _currentIndex = 0;
 
   @override
   void dispose() {
@@ -31,6 +33,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     );
   }
 
+  void _navigateToSettings() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+    );
+  }
+
   Future<void> _onRefresh() async {
     await context.read<TaskProvider>().loadTasks();
   }
@@ -39,84 +48,171 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            _buildHeader(),
-
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                0,
-                AppSpacing.md,
-                AppSpacing.md,
-              ),
-              child: AppSearchBar(controller: _searchController),
-            ),
-
-            // Filter Chips
-            const FilterChips(),
-
-            const SizedBox(height: AppSpacing.sm),
-
-            // Task List
-            Expanded(
-              child: Consumer<TaskProvider>(
-                builder: (context, provider, _) {
-                  // Loading state
-                  if (provider.isLoading) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: AppColors.primary,
-                      ),
-                    );
-                  }
-
-                  // Error state
-                  if (provider.error != null) {
-                    return _buildErrorState(provider.error!);
-                  }
-
-                  // Empty state
-                  if (provider.tasks.isEmpty) {
-                    return EmptyState(
-                      filter: provider.filter,
-                      searchQuery: provider.searchQuery,
-                    );
-                  }
-
-                  // Task list
-                  return RefreshIndicator(
-                    onRefresh: _onRefresh,
-                    color: AppColors.primary,
-                    backgroundColor: AppColors.surface,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 100),
-                      itemCount: provider.tasks.length,
-                      itemBuilder: (context, index) {
-                        final task = provider.tasks[index];
-                        return SwipeableTaskCard(
-                          key: ValueKey(task.id),
-                          task: task,
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          // Home Tab
+          _buildHomeContent(),
+          // Settings Tab
+          const SettingsScreen(),
+        ],
+      ),
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton.extended(
+              onPressed: _navigateToAddTask,
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 4,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Task'),
+            )
+          : null,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
             ),
           ],
         ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  icon: Icons.home_rounded,
+                  label: 'Home',
+                  index: 0,
+                ),
+                _buildNavItem(
+                  icon: Icons.settings_rounded,
+                  label: 'Settings',
+                  index: 1,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _navigateToAddTask,
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Task'),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required String label,
+    required int index,
+  }) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.primary : AppColors.textTertiary,
+              size: 24,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomeContent() {
+    return SafeArea(
+      child: Column(
+        children: [
+          // Header
+          _buildHeader(),
+
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              0,
+              AppSpacing.md,
+              AppSpacing.md,
+            ),
+            child: AppSearchBar(controller: _searchController),
+          ),
+
+          // Filter Chips
+          const FilterChips(),
+
+          const SizedBox(height: AppSpacing.sm),
+
+          // Task List
+          Expanded(
+            child: Consumer<TaskProvider>(
+              builder: (context, provider, _) {
+                // Loading state
+                if (provider.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                  );
+                }
+
+                // Error state
+                if (provider.error != null) {
+                  return _buildErrorState(provider.error!);
+                }
+
+                // Empty state
+                if (provider.tasks.isEmpty) {
+                  return EmptyState(
+                    filter: provider.filter,
+                    searchQuery: provider.searchQuery,
+                  );
+                }
+
+                // Task list
+                return RefreshIndicator(
+                  onRefresh: _onRefresh,
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.surface,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 100),
+                    itemCount: provider.tasks.length,
+                    itemBuilder: (context, index) {
+                      final task = provider.tasks[index];
+                      return SwipeableTaskCard(
+                        key: ValueKey(task.id),
+                        task: task,
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
