@@ -14,9 +14,6 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasSearch = searchQuery.isNotEmpty;
-    final isFiltered = filter != TaskFilter.all;
-
     return Center(
       child: Padding(
         padding: AppSpacing.screenPadding,
