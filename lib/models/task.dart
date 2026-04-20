@@ -25,7 +25,6 @@ class Task extends HiveObject {
   @HiveField(6)
   String priority;
 
-  // New fields for enhanced features
   @HiveField(7)
   String? category;
 
@@ -42,34 +41,28 @@ class Task extends HiveObject {
     this.priority = 'medium',
     this.category,
     List<String>? tags,
-  })  : _title = title.isEmpty ? 'Untitled Task' : title,
-        _priority = ['low', 'medium', 'high'].contains(priority) ? priority : 'medium',
-        _tags = tags ?? [] {
-    // Lenient validation - use defaults instead of throwing errors
-    // This prevents crashes when loading old data from Hive
+  }) : tags = tags ?? [] {
+    // Lenient validation for title
+    if (title.isEmpty) {
+      this.title = 'Untitled Task';
+    }
+    // Validate priority
+    if (!['low', 'medium', 'high'].contains(priority)) {
+      this.priority = 'medium';
+    }
   }
 
-  // Private backing fields
-  String _title;
-  String _priority;
-  List<String> _tags;
-
-  // Getters that return validated values
-  String get title => _title;
-  String get priority => _priority;
-  List<String> get tags => List.unmodifiable(_tags);
-
-  // Setters with validation
+  // Simple setters with validation
   set title(String value) {
-    _title = value.isEmpty ? 'Untitled Task' : value;
+    title = value.isEmpty ? 'Untitled Task' : value;
   }
 
   set priority(String value) {
-    _priority = ['low', 'medium', 'high'].contains(value) ? value : 'medium';
+    priority = ['low', 'medium', 'high'].contains(value) ? value : 'medium';
   }
 
   set tags(List<String> value) {
-    _tags = value ?? [];
+    tags = value ?? [];
   }
 
   Task copyWith({
