@@ -18,12 +18,27 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   DateTime? _selectedDueDate;
   String _selectedPriority = 'medium';
+  String? _selectedCategory;
+  final List<String> _tags = [];
+  final _tagController = TextEditingController();
   bool _isLoading = false;
+
+  // Predefined categories
+  final List<String> _categories = [
+    'Work',
+    'Personal',
+    'Health',
+    'Finance',
+    'Shopping',
+    'Learning',
+    'Other',
+  ];
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -59,6 +74,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     });
   }
 
+  void _addTag() {
+    final tag = _tagController.text.trim();
+    if (tag.isNotEmpty && !_tags.contains(tag)) {
+      setState(() {
+        _tags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() {
+      _tags.remove(tag);
+    });
+  }
+
   Future<void> _submitTask() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -73,6 +104,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         description: _descriptionController.text,
         dueDate: _selectedDueDate,
         priority: _selectedPriority,
+        category: _selectedCategory,
+        tags: _tags,
       );
 
       if (success && mounted) {
@@ -182,6 +215,41 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
 
+              // Category Section
+              _SectionHeader(
+                icon: Icons.category,
+                title: 'Category',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: _categories.map((category) {
+                  final isSelected = _selectedCategory == category;
+                  return ChoiceChip(
+                    label: Text(
+                      category,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedColor: AppColors.primary,
+                    backgroundColor: AppColors.surfaceElevated,
+                    side: BorderSide(
+                      color: isSelected ? AppColors.primary : AppColors.divider,
+                    ),
+                    onSelected: (selected) {
+                      setState(() {
+                        _selectedCategory = selected ? category : null;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
               // Due Date Section
               _SectionHeader(
                 icon: Icons.calendar_today,
@@ -254,6 +322,65 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   );
                 }).toList(),
               ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Tags Section
+              _SectionHeader(
+                icon: Icons.label,
+                title: 'Tags',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _tagController,
+                      decoration: InputDecoration(
+                        hintText: 'Add a tag',
+                        filled: true,
+                        fillColor: AppColors.surfaceElevated,
+                        border: OutlineInputBorder(
+                          borderRadius: AppRadius.inputRadius,
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: 12,
+                        ),
+                      ),
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      onSubmitted: (_) => _addTag(),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  IconButton(
+                    onPressed: _addTag,
+                    icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.surfaceElevated,
+                    ),
+                  ),
+                ],
+              ),
+              if (_tags.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: _tags.map((tag) {
+                    return Chip(
+                      label: Text(
+                        tag,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                      ),
+                      backgroundColor: AppColors.surfaceOverlay,
+                      deleteIcon: const Icon(Icons.close, size: 16),
+                      onDeleted: () => _removeTag(tag),
+                      side: const BorderSide(color: AppColors.divider),
+                    );
+                  }).toList(),
+                ),
+              ],
               const SizedBox(height: AppSpacing.xxl),
 
               // Submit Button
