@@ -19,9 +19,20 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
   late TextEditingController _descriptionController;
   DateTime? _selectedDueDate;
   String _selectedPriority = 'medium';
+  String? _selectedCategory;
   bool _isLoading = false;
 
   final List<String> _priorities = ['low', 'medium', 'high'];
+  static const List<String> _categories = [
+    'work',
+    'personal',
+    'health',
+    'shopping',
+    'study',
+    'finance',
+    'home',
+    'other',
+  ];
 
   @override
   void initState() {
@@ -30,6 +41,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     _descriptionController = TextEditingController(text: widget.task.description);
     _selectedDueDate = widget.task.dueDate;
     _selectedPriority = widget.task.priority;
+    _selectedCategory = widget.task.category;
   }
 
   @override
@@ -66,16 +78,18 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     }
   }
 
-  Color _getPriorityColor(String priority) {
-    switch (priority) {
-      case 'high':
-        return AppColors.priorityHigh;
-      case 'low':
-        return AppColors.priorityLow;
-      case 'medium':
-      default:
-        return AppColors.priorityMedium;
-    }
+  String _getCategoryLabel(String category) {
+    final labels = {
+      'work': '💼 Work',
+      'personal': '👤 Personal',
+      'health': '❤️ Health',
+      'shopping': '🛒 Shopping',
+      'study': '📚 Study',
+      'finance': '💰 Finance',
+      'home': '🏠 Home',
+      'other': '📌 Other',
+    };
+    return labels[category] ?? category;
   }
 
   Future<void> _saveTask() async {
@@ -97,6 +111,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
           description: _descriptionController.text,
           dueDate: _selectedDueDate,
           priority: _selectedPriority,
+          category: _selectedCategory,
         );
 
     setState(() => _isLoading = false);
@@ -218,6 +233,110 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             ),
             const SizedBox(height: 20),
 
+            // Category field
+            const Text(
+              'Category',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _categories.map((category) {
+                final isSelected = _selectedCategory == category;
+                return InkWell(
+                  onTap: () => setState(() {
+                    _selectedCategory = isSelected ? null : category;
+                  }),
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary.withOpacity(0.2)
+                          : AppColors.cardBackground,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Text(
+                      _getCategoryLabel(category),
+                      style: TextStyle(
+                        color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+
+            // Priority field
+            const Text(
+              'Priority',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: _priorities.map((priority) {
+                final isSelected = _selectedPriority == priority;
+                final color = priority == 'high'
+                    ? AppColors.priorityHigh
+                    : priority == 'low'
+                        ? AppColors.priorityLow
+                        : AppColors.priorityMedium;
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      right: priority != _priorities.last ? 8 : 0,
+                    ),
+                    child: InkWell(
+                      onTap: () => setState(() => _selectedPriority = priority),
+                      borderRadius: BorderRadius.circular(12),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? color.withOpacity(0.2)
+                              : AppColors.cardBackground,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? color : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            priority[0].toUpperCase() + priority.substring(1),
+                            style: TextStyle(
+                              color: isSelected ? color : AppColors.textSecondary,
+                              fontWeight:
+                                  isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 20),
+
             // Due date field
             const Text(
               'Due Date',
@@ -270,59 +389,6 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            // Priority field
-            const Text(
-              'Priority',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: _priorities.map((priority) {
-                final isSelected = _selectedPriority == priority;
-                final color = _getPriorityColor(priority);
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      right: priority != _priorities.last ? 8 : 0,
-                    ),
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedPriority = priority),
-                      borderRadius: BorderRadius.circular(12),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? color.withOpacity(0.2)
-                              : AppColors.cardBackground,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected ? color : Colors.transparent,
-                            width: 2,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            priority[0].toUpperCase() + priority.substring(1),
-                            style: TextStyle(
-                              color: isSelected ? color : AppColors.textSecondary,
-                              fontWeight:
-                                  isSelected ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
             ),
             const SizedBox(height: 32),
 

@@ -25,6 +25,9 @@ class Task extends HiveObject {
   @HiveField(6)
   String priority; // low, medium, high
 
+  @HiveField(7)
+  String? category; // work, personal, health, shopping, study, finance, home, other
+
   Task({
     required this.id,
     required this.title,
@@ -33,12 +36,10 @@ class Task extends HiveObject {
     required this.createdAt,
     this.dueDate,
     this.priority = 'medium',
+    this.category,
   }) {
     if (title.isEmpty) {
       throw ArgumentError('Title cannot be empty');
-    }
-    if (!['low', 'medium', 'high'].contains(priority)) {
-      throw ArgumentError('Priority must be low, medium, or high');
     }
   }
 
@@ -51,6 +52,7 @@ class Task extends HiveObject {
     DateTime? dueDate,
     String? priority,
     bool clearDueDate = false,
+    String? category,
   }) {
     return Task(
       id: id ?? this.id,
@@ -60,6 +62,7 @@ class Task extends HiveObject {
       createdAt: createdAt ?? this.createdAt,
       dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
       priority: priority ?? this.priority,
+      category: category ?? this.category,
     );
   }
 
@@ -73,26 +76,12 @@ class Task extends HiveObject {
         other.isCompleted == isCompleted &&
         other.createdAt == createdAt &&
         other.dueDate == dueDate &&
-        other.priority == priority;
+        other.priority == priority &&
+        other.category == category;
   }
 
   @override
   int get hashCode {
-    return Object.hash(
-      id,
-      title,
-      description,
-      isCompleted,
-      createdAt,
-      dueDate,
-      priority,
-    );
-  }
-
-  @override
-  String toString() {
-    return 'Task(id: $id, title: $title, description: $description, '
-        'isCompleted: $isCompleted, createdAt: $createdAt, '
-        'dueDate: $dueDate, priority: $priority)';
+    return Object.hash(id, title, description, isCompleted, createdAt, dueDate, priority, category);
   }
 }

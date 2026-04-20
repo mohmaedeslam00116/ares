@@ -11,14 +11,15 @@ class TaskProvider extends ChangeNotifier {
   String? _error;
   TaskFilter _filter = TaskFilter.all;
   String _searchQuery = '';
+  String? _categoryFilter;
   final StorageService _storage = StorageService();
   final Uuid _uuid = const Uuid();
 
-  // Getters
   bool get isLoading => _isLoading;
   String? get error => _error;
   TaskFilter get filter => _filter;
   String get searchQuery => _searchQuery;
+  String? get categoryFilter => _categoryFilter;
   
   List<Task> get tasks {
     var filtered = _tasks;
@@ -26,6 +27,9 @@ class TaskProvider extends ChangeNotifier {
       filtered = filtered.where((t) => !t.isCompleted).toList();
     } else if (_filter == TaskFilter.completed) {
       filtered = filtered.where((t) => t.isCompleted).toList();
+    }
+    if (_categoryFilter != null && _categoryFilter!.isNotEmpty) {
+      filtered = filtered.where((t) => t.category == _categoryFilter).toList();
     }
     if (_searchQuery.isNotEmpty) {
       filtered = filtered.where((t) =>
@@ -38,8 +42,17 @@ class TaskProvider extends ChangeNotifier {
 
   int get pendingCount => _tasks.where((t) => !t.isCompleted).length;
   int get completedCount => _tasks.where((t) => t.isCompleted).length;
+  
+  List<String> get categories {
+    final cats = _tasks
+        .where((t) => t.category != null && t.category!.isNotEmpty)
+        .map((t) => t.category!)
+        .toSet()
+        .toList();
+    cats.sort();
+    return cats;
+  }
 
-  // Initialization
   Future<void> init() async {
     await _storage.init();
   }
@@ -58,12 +71,12 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
-  // CRUD operations
   Future<bool> addTask({
     required String title,
     required String description,
     DateTime? dueDate,
     String priority = 'medium',
+    String? category,
   }) async {
     if (title.trim().isEmpty) {
       _error = 'Title cannot be empty';
@@ -78,6 +91,7 @@ class TaskProvider extends ChangeNotifier {
         createdAt: DateTime.now(),
         dueDate: dueDate,
         priority: priority,
+        category: category,
       );
       final success = await _storage.addTask(task);
       if (success) {
@@ -102,7 +116,7 @@ class TaskProvider extends ChangeNotifier {
       if (success) {
         notifyListeners();
       } else {
-        task.isCompleted = !task.isCompleted; // revert
+        task.isCompleted = !task.isCompleted;
       }
       return success;
     } catch (e) {
@@ -118,6 +132,7 @@ class TaskProvider extends ChangeNotifier {
     required String description,
     DateTime? dueDate,
     String priority = 'medium',
+    String? category,
   }) async {
     try {
       final index = _tasks.indexWhere((t) => t.id == id);
@@ -127,13 +142,8 @@ class TaskProvider extends ChangeNotifier {
       task.description = description.trim();
       task.dueDate = dueDate;
       task.priority = priority;
+      task.category = category;
       final success = await _storage.updateTask(task);
-      if (!success) {
-        task.title = _tasks[index].title;
-        task.description = _tasks[index].description;
-        task.dueDate = _tasks[index].dueDate;
-        task.priority = _tasks[index].priority;
-      }
       notifyListeners();
       return success;
     } catch (e) {
@@ -158,9 +168,13 @@ class TaskProvider extends ChangeNotifier {
     }
   }
 
-  // Filters & Search
   void setFilter(TaskFilter filter) {
     _filter = filter;
+    notifyListeners();
+  }
+
+  void setCategoryFilter(String? category) {
+    _categoryFilter = category;
     notifyListeners();
   }
 
