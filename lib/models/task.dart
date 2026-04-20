@@ -42,16 +42,11 @@ class Task extends HiveObject {
     this.priority = 'medium',
     this.category,
     List<String>? tags,
-  }) {
+  })  : _title = title.isEmpty ? 'Untitled Task' : title,
+        _priority = ['low', 'medium', 'high'].contains(priority) ? priority : 'medium',
+        _tags = tags ?? [] {
     // Lenient validation - use defaults instead of throwing errors
     // This prevents crashes when loading old data from Hive
-    if (title.isEmpty) {
-      _title = 'Untitled Task';
-    }
-    if (!['low', 'medium', 'high'].contains(priority)) {
-      _priority = 'medium';
-    }
-    _tags = tags ?? [];
   }
 
   // Private backing fields
