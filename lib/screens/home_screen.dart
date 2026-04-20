@@ -7,6 +7,7 @@ import '../widgets/search_bar.dart';
 import '../widgets/filter_chips.dart';
 import '../widgets/empty_state.dart';
 import 'add_task_screen.dart';
+import 'statistics_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
