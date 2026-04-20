@@ -4,19 +4,42 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.x'
+          flutter-version: '3.24.0'
+          channel: 'stable'
+          cache: true
+          cache-dependency-path: pubspec.lock
+
       - run: flutter pub get
-      - run: flutter create .
-      - run: flutter build apk --debug
-      - uses: actions/upload-artifact@v4
+
+      - name: Generate Hive Adapters
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
+      - name: Analyze Code
+        run: flutter analyze
+
+      - name: Build Debug APK
+        run: flutter build apk --debug
+
+      - name: Build Release APK
+        run: flutter build apk --release --obfuscate --split-debug-info=build/debug-info
+
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
         with:
-          name: ares-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          name: ares-apk-${{ github.run_number }}
+          path: |
+            build/app/outputs/flutter-apk/app-debug.apk
+            build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

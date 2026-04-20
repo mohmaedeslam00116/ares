@@ -1,18 +1,28 @@
 name: ares
-description: A new Flutter project.
+description: ARES - AI-powered productivity task manager
+publish_to: 'none'
 version: 1.0.0+1
+
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.0.0 <5.0.0'
+
 dependencies:
   flutter:
     sdk: flutter
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  provider: ^6.0.5
+  provider: ^6.1.1
   google_fonts: ^6.1.0
+  uuid: ^4.2.2
+  intl: ^0.19.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_lints: ^3.0.1
   mockito: ^5.4.4
   build_runner: ^2.4.8
-# Force update
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true
