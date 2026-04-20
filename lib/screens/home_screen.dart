@@ -9,6 +9,7 @@ import '../widgets/empty_state.dart';
 import 'add_task_screen.dart';
 import 'statistics_screen.dart';
 
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -174,8 +175,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                 ),
               ),
 
-              // Stats
-              Container(
+              // Stats - tap to view statistics
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const StatisticsScreen()),
+                ),
+                child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
                   vertical: AppSpacing.sm,
@@ -206,6 +212,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                   ],
                 ),
               ),
+            ),
             ],
           ),
         );
