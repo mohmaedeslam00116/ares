@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-// Unused import removed: 'package:hive/hive.dart'
 import 'package:provider/provider.dart';
 import '../providers/task_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
-import '../services/locale_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,39 +12,296 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final LocaleService _localeService = LocaleService();
-  bool _isDarkMode = true;
-  String _currentLanguage = 'en';
-
   @override
-  void initState() {
-    super.initState();
-    _loadSettings();
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.scaffoldBackground : const Color(0xFFFAFAFA);
+    final surfaceColor = isDark ? AppColors.surface : Colors.white;
+    final textPrimary = isDark ? AppColors.textPrimary : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? AppColors.textSecondary : const Color(0xFF666666);
+    final textTertiary = isDark ? AppColors.textTertiary : const Color(0xFF999999);
+    final dividerColor = isDark ? AppColors.divider : const Color(0xFFE0E0E0);
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: const Text('Settings'),
+        backgroundColor: surfaceColor,
+        elevation: 0,
+        titleTextStyle: TextStyle(
+          color: textPrimary,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: IconThemeData(color: textPrimary),
+      ),
+      body: ListView(
+        padding: AppSpacing.screenPadding,
+        children: [
+          // Appearance Section
+          _buildSectionHeader('Appearance', textTertiary),
+          _buildSettingCard([
+            Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) {
+                return _buildSwitchTile(
+                  icon: isDark ? Icons.dark_mode : Icons.light_mode,
+                  title: 'Dark Mode',
+                  subtitle: isDark ? 'Currently using dark theme' : 'Currently using light theme',
+                  value: isDark,
+                  onChanged: (value) {
+                    themeProvider.setDarkMode(value);
+                  },
+                  textPrimary: textPrimary,
+                  textSecondary: textSecondary,
+                );
+              },
+            ),
+          ], surfaceColor),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Notifications Section
+          _buildSectionHeader('Notifications', textTertiary),
+          _buildSettingCard([
+            _buildInfoTile(
+              icon: Icons.notifications,
+              title: 'Task Reminders',
+              subtitle: 'Get notified before due date',
+              trailing: 'Enabled',
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+              iconColor: AppColors.success,
+            ),
+          ], surfaceColor),
+          const SizedBox(height: AppSpacing.lg),
+
+          // Data Section
+          _buildSectionHeader('Data', textTertiary),
+          _buildSettingCard([
+            _buildActionTile(
+              icon: Icons.delete_forever,
+              title: 'Clear All Data',
+              subtitle: 'Delete all tasks permanently',
+              iconColor: AppColors.error,
+              textPrimary: textPrimary,
+              onTap: _showClearDataDialog,
+            ),
+          ], surfaceColor),
+          const SizedBox(height: AppSpacing.lg),
+
+          // About Section
+          _buildSectionHeader('About', textTertiary),
+          _buildSettingCard([
+            _buildInfoTile(
+              icon: Icons.info_outline,
+              title: 'Version',
+              trailing: '1.3.0',
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+              iconColor: AppColors.primary,
+            ),
+            Divider(height: 1, color: dividerColor),
+            _buildInfoTile(
+              icon: Icons.code,
+              title: 'Built with',
+              trailing: 'Flutter',
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+              iconColor: AppColors.info,
+            ),
+            Divider(height: 1, color: dividerColor),
+            _buildInfoTile(
+              icon: Icons.auto_awesome,
+              title: 'Features',
+              trailing: '12+',
+              textPrimary: textPrimary,
+              textSecondary: textSecondary,
+              iconColor: AppColors.warning,
+            ),
+          ], surfaceColor),
+          const SizedBox(height: AppSpacing.xxl),
+
+          // Footer
+          Center(
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: AppColors.primaryGradient,
+                    ),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Icon(
+                    Icons.bolt,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'ARES',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: textPrimary,
+                    letterSpacing: 2,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'AI-Powered Productivity',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'v1.3.0 - Now with Dark Mode, Notifications & Tags',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Future<void> _loadSettings() async {
-    await _localeService.init();
-    setState(() {
-      _isDarkMode = _localeService.isDarkMode;
-      _currentLanguage = _localeService.getCurrentLocale().languageCode;
-    });
+  Widget _buildSectionHeader(String title, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        left: AppSpacing.xs,
+        bottom: AppSpacing.sm,
+      ),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: color,
+          letterSpacing: 1,
+        ),
+      ),
+    );
   }
 
-  Future<void> _toggleDarkMode(bool value) async {
-    setState(() => _isDarkMode = value);
-    await _localeService.setDarkMode(value);
+  Widget _buildSettingCard(List<Widget> children, Color surfaceColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: surfaceColor,
+        borderRadius: AppRadius.cardRadius,
+      ),
+      child: Column(children: children),
+    );
   }
 
-  Future<void> _changeLanguage(String languageCode) async {
-    setState(() => _currentLanguage = languageCode);
-    await _localeService.setLocale(languageCode);
+  Widget _buildSwitchTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+    required Color textPrimary,
+    required Color textSecondary,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: AppColors.primary),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          color: textSecondary,
+          fontSize: 12,
+        ),
+      ),
+      trailing: Switch(
+        value: value,
+        onChanged: onChanged,
+        activeColor: AppColors.primary,
+      ),
+    );
+  }
+
+  Widget _buildInfoTile({
+    required IconData icon,
+    required String title,
+    required String trailing,
+    required Color textPrimary,
+    required Color textSecondary,
+    required Color iconColor,
+    String? subtitle,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: textPrimary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: subtitle != null
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: textSecondary,
+                fontSize: 12,
+              ),
+            )
+          : null,
+      trailing: Text(
+        trailing,
+        style: TextStyle(
+          color: textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color iconColor,
+    required Color textPrimary,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: iconColor,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(
+          color: textSecondary,
+          fontSize: 12,
+        ),
+      ),
+      onTap: onTap,
+    );
   }
 
   void _showClearDataDialog() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.cardBackground,
         title: const Text(
           'Clear All Data',
           style: TextStyle(color: AppColors.textPrimary),
@@ -75,11 +331,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _clearAllTasks() async {
     final provider = context.read<TaskProvider>();
     final tasks = provider.tasks;
-    
+
     for (final task in tasks) {
       await provider.deleteTask(task.id);
     }
-    
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -88,269 +344,5 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       );
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppColors.surface,
-        elevation: 0,
-      ),
-      body: ListView(
-        padding: AppSpacing.screenPadding,
-        children: [
-          // Appearance Section
-          _buildSectionHeader('Appearance'),
-          _buildSettingCard([
-            _buildSwitchTile(
-              icon: Icons.dark_mode,
-              title: 'Dark Mode',
-              subtitle: 'Use dark theme',
-              value: _isDarkMode,
-              onChanged: _toggleDarkMode,
-            ),
-          ]),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Language Section
-          _buildSectionHeader('Language'),
-          _buildSettingCard([
-            _buildLanguageTile(
-              icon: Icons.language,
-              title: 'English',
-              isSelected: _currentLanguage == 'en',
-              onTap: () => _changeLanguage('en'),
-            ),
-            const Divider(height: 1, color: AppColors.divider),
-            _buildLanguageTile(
-              icon: Icons.language,
-              title: 'العربية',
-              isSelected: _currentLanguage == 'ar',
-              onTap: () => _changeLanguage('ar'),
-            ),
-          ]),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Notifications Section
-          _buildSectionHeader('Notifications'),
-          _buildSettingCard([
-            _buildSwitchTile(
-              icon: Icons.notifications,
-              title: 'Task Reminders',
-              subtitle: 'Get notified before due date',
-              value: true,
-              onChanged: (value) {
-                // TODO: Implement notifications
-              },
-            ),
-          ]),
-          const SizedBox(height: AppSpacing.lg),
-
-          // About Section
-          _buildSectionHeader('About'),
-          _buildSettingCard([
-            _buildInfoTile(
-              icon: Icons.info_outline,
-              title: 'Version',
-              trailing: '1.0.0',
-            ),
-            const Divider(height: 1, color: AppColors.divider),
-            _buildInfoTile(
-              icon: Icons.code,
-              title: 'Built with',
-              trailing: 'Flutter',
-            ),
-          ]),
-          const SizedBox(height: AppSpacing.lg),
-
-          // Danger Zone
-          _buildSectionHeader('Danger Zone'),
-          _buildSettingCard([
-            _buildActionTile(
-              icon: Icons.delete_forever,
-              title: 'Clear All Data',
-              subtitle: 'Delete all tasks permanently',
-              iconColor: AppColors.error,
-              onTap: _showClearDataDialog,
-            ),
-          ]),
-          const SizedBox(height: AppSpacing.xxl),
-
-          // Footer
-          Center(
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: AppColors.primaryGradient,
-                    ),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: const Icon(
-                    Icons.bolt,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  'ARES',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'AI-Powered Productivity',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        left: AppSpacing.xs,
-        bottom: AppSpacing.sm,
-      ),
-      child: Text(
-        title.toUpperCase(),
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textTertiary,
-          letterSpacing: 1,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSettingCard(List<Widget> children) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.cardRadius,
-      ),
-      child: Column(children: children),
-    );
-  }
-
-  Widget _buildSwitchTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 12,
-        ),
-      ),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-        activeColor: AppColors.primary,
-      ),
-    );
-  }
-
-  Widget _buildLanguageTile({
-    required IconData icon,
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      trailing: isSelected
-          ? const Icon(Icons.check_circle, color: AppColors.success)
-          : null,
-      onTap: onTap,
-    );
-  }
-
-  Widget _buildInfoTile({
-    required IconData icon,
-    required String title,
-    required String trailing,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppColors.primary),
-      title: Text(
-        title,
-        style: const TextStyle(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      trailing: Text(
-        trailing,
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color iconColor,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: iconColor),
-      title: Text(
-        title,
-        style: TextStyle(
-          color: iconColor,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 12,
-        ),
-      ),
-      onTap: onTap,
-    );
   }
 }

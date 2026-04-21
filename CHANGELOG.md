@@ -1,20 +1,20 @@
 # ARES - Roadmap & Changelog
 
-## 📋 Current Version: 1.2.0
-**Status:** Statistics Dashboard added, 8 Categories, Search/Filter
+## 📋 Current Version: 1.3.0
+**Status:** Dark Mode, Notifications, Tags, Recurring Tasks ✅
 
 ---
 
 ## 🏆 Priority Roadmap (Best → Worst)
 
-### 🔥 Tier 1 - High Impact (Do First)
+### 🔥 Tier 1 - High Impact (Do First) ✅ COMPLETED
 
-| # | Feature | Impact | Effort | Why First |
-|---|---------|--------|--------|-----------|
-| 1 | **Dark/Light Theme Toggle** | ⭐⭐⭐⭐⭐ | ⭐ | 80% of users expect this |
-| 2 | **Local Notifications/Reminders** | ⭐⭐⭐⭐⭐ | ⭐⭐ | Core functionality missing |
-| 3 | **Tags System** | ⭐⭐⭐⭐ | ⭐⭐ | Already have categories, tags complement |
-| 4 | **Recurring Tasks** | ⭐⭐⭐⭐ | ⭐⭐ | Daily/Weekly/Monthly repeat |
+| # | Feature | Status | Priority |
+|---|---------|--------|----------|
+| 1 | **Dark/Light Theme Toggle** | ✅ Done | ⭐⭐⭐⭐⭐ |
+| 2 | **Local Notifications/Reminders** | ✅ Done | ⭐⭐⭐⭐⭐ |
+| 3 | **Tags System** | ✅ Done | ⭐⭐⭐⭐ |
+| 4 | **Recurring Tasks** | ✅ Done | ⭐⭐⭐⭐ |
 
 ### 🎯 Tier 2 - Medium Impact
 
@@ -28,7 +28,7 @@
 ### 💡 Tier 3 - Nice to Have
 
 | # | Feature | Impact | Effort | Low Priority |
-|---|---------|--------|--------|-------------|
+|---|---------|--------|--------|---------------|
 | 9 | **Cloud Backup (Firebase)** | ⭐⭐⭐ | ⭐⭐⭐⭐ | Extra complexity |
 | 10 | **AI Task Suggestions** | ⭐⭐⭐ | ⭐⭐⭐⭐ | "AI-powered" branding |
 | 11 | **Widget (Android Home)** | ⭐⭐ | ⭐⭐⭐ | Advanced feature |
@@ -38,17 +38,41 @@
 
 ## 📝 CHANGELOG
 
-### [Unreleased] - v1.3.0 (Planned)
+### [1.3.0] - 2026-04-21 ✅ MAJOR UPDATE
 
 #### Added
-- _(Planned) Dark/Light Theme Toggle_
-- _(Planned) Local Notifications/Reminders_
-- _(Planned) Tags System_
-- _(Planned) Recurring Tasks (daily/weekly/monthly)_
-- _(Planned) JSON Export/Import_
+- **🌙 Dark/Light Theme Toggle**
+  - Full light theme support
+  - Theme persists across app restarts
+  - Smooth transitions between themes
+  
+- **🔔 Local Notifications & Reminders**
+  - Push notifications before due dates
+  - Customizable reminder times (5, 10, 15, 30, 60, 120 min)
+  - Permission handling for Android 13+
+  
+- **🏷️ Tags System**
+  - Add custom tags to any task
+  - Multi-select tags support
+  - Search tasks by tag
+  
+- **🔄 Recurring Tasks**
+  - Daily, Weekly, Monthly, Yearly recurrence
+  - Auto-create next occurrence when completed
+  - Full recurrence editing
 
-#### Improved
-- _(Planned) UI Animations & Transitions_
+#### Changed
+- Task model enhanced with tags, recurrence, and reminder fields
+- TaskProvider updated with notification scheduling
+- ThemeProvider for persistent theme settings
+- Settings screen redesigned with clearer sections
+
+#### Technical
+- Added `flutter_local_notifications` package
+- Added `timezone` package
+- Added `permission_handler` package
+- Updated `task.g.dart` for new fields
+- CI/CD now builds both Debug and Release APKs
 
 ---
 
@@ -93,10 +117,11 @@
 ## 🔧 Technical Notes
 
 ### Current Stack
-- Flutter 3.0+ / Dart
+- Flutter 3.24.0 / Dart
 - Provider (State Management)
 - Hive (Local Storage)
 - Google Fonts
+- flutter_local_notifications (Reminders)
 - GitHub Actions (CI/CD)
 
 ### Dependencies (pubspec.yaml)
@@ -108,17 +133,9 @@ dependencies:
   uuid: ^4.5.1
   intl: ^0.19.0
   google_fonts: ^6.2.1
-```
-
-### Recommended Future Dependencies
-```yaml
-# For Tier 1 features:
-flutter_local_notifications: ^17.0.0  # Reminders
-share_plus: ^7.0.0                    # Export sharing
-file_picker: ^6.0.0                   # Import files
-
-# For Tier 2 features:
-flutter_animate: ^4.0.0               # Animations
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.10.0
+  permission_handler: ^11.3.1
 ```
 
 ---
@@ -127,21 +144,21 @@ flutter_animate: ^4.0.0               # Animations
 
 | Metric | Current | Target |
 |--------|---------|--------|
-| Features | 15 | 25+ |
-| Code Quality | Good | Excellent |
-| CI/CD | ✅ | ✅ |
-| Dark Mode | ❌ | ✅ |
-| Notifications | ❌ | ✅ |
+| Features | 19 | 25+ |
+| Code Quality | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
+| CI/CD | ✅ | ✅ (Debug + Release) |
+| Dark Mode | ✅ | ✅ |
+| Notifications | ✅ | ✅ |
 | AI Integration | ❌ | ✅ |
 
 ---
 
-## 🚀 Recommended Next Steps
+## 🚀 Next Steps
 
-1. **Immediate**: Add Dark/Light Theme Toggle
-2. **This Week**: Add Notifications/Reminders
-3. **This Month**: Tags + Recurring Tasks
-4. **Future**: Cloud Backup, AI Features
+1. **Data Export/Import** - JSON backup system
+2. **Subtasks** - Break down complex tasks
+3. **Cloud Backup** - Firebase integration
+4. **AI Features** - Task suggestions
 
 ---
 

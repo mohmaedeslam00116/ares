@@ -1,12 +1,15 @@
-name: Build Flutter APK
+name: Build & Release ARES APK
 
 on:
   push:
     branches:
       - main
+  release:
+    types: [published]
 
 jobs:
-  build:
+  build-debug:
+    name: Build Debug APK
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,8 +25,53 @@ jobs:
       - name: Build Debug APK
         run: flutter build apk --debug
 
-      - name: Upload APK
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: ares-debug-apk
           path: build/app/outputs/flutter-apk/app-debug.apk
+
+  build-release:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release
+
+      - name: Upload Release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ares-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Create Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+          body: |
+            ## ARES v${{ github.event.release.tag_name }}
+            
+            ### Features:
+            - 🌙 Dark/Light Theme Toggle
+            - 🔔 Local Notifications & Reminders
+            - 🏷️ Tags System
+            - 🔄 Recurring Tasks
+            - 📊 Statistics Dashboard
+            - 8 Categories
+            - Arabic Localization
+            
+            ### Installation:
+            Download the APK and install on your Android device.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
