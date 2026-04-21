@@ -17,9 +17,15 @@ class EditTaskScreen extends StatefulWidget {
 class _EditTaskScreenState extends State<EditTaskScreen> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _tagController;
+
   DateTime? _selectedDueDate;
   String _selectedPriority = 'medium';
   String? _selectedCategory;
+  List<String> _selectedTags = [];
+  int _selectedRecurrence = 0;
+  bool _reminderEnabled = true;
+  int _reminderMinutes = 30;
   bool _isLoading = false;
 
   final List<String> _priorities = ['low', 'medium', 'high'];
@@ -34,20 +40,36 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     'other',
   ];
 
+  static const List<Map<String, dynamic>> _recurrenceOptions = [
+    {'value': 0, 'label': 'No Repeat', 'icon': Icons.repeat},
+    {'value': 1, 'label': 'Daily', 'icon': Icons.today},
+    {'value': 2, 'label': 'Weekly', 'icon': Icons.date_range},
+    {'value': 3, 'label': 'Monthly', 'icon': Icons.calendar_month},
+    {'value': 4, 'label': 'Yearly', 'icon': Icons.event_repeat},
+  ];
+
+  static const List<int> _reminderOptions = [5, 10, 15, 30, 60, 120];
+
   @override
   void initState() {
     super.initState();
     _titleController = TextEditingController(text: widget.task.title);
     _descriptionController = TextEditingController(text: widget.task.description);
+    _tagController = TextEditingController();
     _selectedDueDate = widget.task.dueDate;
     _selectedPriority = widget.task.priority;
     _selectedCategory = widget.task.category;
+    _selectedTags = List.from(widget.task.tags);
+    _selectedRecurrence = widget.task.recurrenceType;
+    _reminderEnabled = widget.task.reminderEnabled;
+    _reminderMinutes = widget.task.reminderMinutesBefore;
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -60,7 +82,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.dark(
+            colorScheme: ColorScheme.dark(
               primary: AppColors.primary,
               onPrimary: Colors.white,
               surface: AppColors.cardBackground,
@@ -78,6 +100,28 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     }
   }
 
+  void _clearDueDate() {
+    setState(() {
+      _selectedDueDate = null;
+    });
+  }
+
+  void _addTag() {
+    final tag = _tagController.text.trim();
+    if (tag.isNotEmpty && !_selectedTags.contains(tag)) {
+      setState(() {
+        _selectedTags.add(tag);
+        _tagController.clear();
+      });
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() {
+      _selectedTags.remove(tag);
+    });
+  }
+
   String _getCategoryLabel(String category) {
     final labels = {
       'work': '💼 Work',
@@ -90,6 +134,11 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
       'other': '📌 Other',
     };
     return labels[category] ?? category;
+  }
+
+  String _formatReminderMinutes(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    return '${minutes ~/ 60} hr${minutes >= 120 ? 's' : ''}';
   }
 
   Future<void> _saveTask() async {
@@ -112,6 +161,10 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
           dueDate: _selectedDueDate,
           priority: _selectedPriority,
           category: _selectedCategory,
+          tags: _selectedTags,
+          recurrenceType: _selectedRecurrence,
+          reminderEnabled: _reminderEnabled && _selectedDueDate != null,
+          reminderMinutesBefore: _reminderMinutes,
         );
 
     setState(() => _isLoading = false);
@@ -136,10 +189,17 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.scaffoldBackground : const Color(0xFFFAFAFA);
+    final cardBg = isDark ? AppColors.cardBackground : Colors.white;
+    final textPrimary = isDark ? AppColors.textPrimary : const Color(0xFF1A1A1A);
+    final textSecondary = isDark ? AppColors.textSecondary : const Color(0xFF666666);
+    final surfaceElevated = isDark ? AppColors.surfaceElevated : const Color(0xFFF0F0F0);
+
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: cardBg,
         title: const Text(
           'Edit Task',
           style: TextStyle(color: AppColors.textPrimary),
@@ -173,23 +233,15 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Title field
-            const Text(
-              'Title',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            _buildLabel('Title', textSecondary),
             const SizedBox(height: 8),
             TextField(
               controller: _titleController,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: textPrimary),
               decoration: InputDecoration(
                 hintText: 'Enter task title',
-                hintStyle: const TextStyle(color: AppColors.textHint),
                 filled: true,
-                fillColor: AppColors.cardBackground,
+                fillColor: surfaceElevated,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -203,24 +255,16 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             const SizedBox(height: 20),
 
             // Description field
-            const Text(
-              'Description',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            _buildLabel('Description', textSecondary),
             const SizedBox(height: 8),
             TextField(
               controller: _descriptionController,
-              style: const TextStyle(color: AppColors.textPrimary),
-              maxLines: 4,
+              style: TextStyle(color: textPrimary),
+              maxLines: 3,
               decoration: InputDecoration(
                 hintText: 'Enter task description',
-                hintStyle: const TextStyle(color: AppColors.textHint),
                 filled: true,
-                fillColor: AppColors.cardBackground,
+                fillColor: surfaceElevated,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -234,14 +278,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             const SizedBox(height: 20),
 
             // Category field
-            const Text(
-              'Category',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            _buildLabel('Category', textSecondary),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -259,7 +296,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                     decoration: BoxDecoration(
                       color: isSelected
                           ? AppColors.primary.withOpacity(0.2)
-                          : AppColors.cardBackground,
+                          : surfaceElevated,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: isSelected ? AppColors.primary : Colors.transparent,
@@ -269,7 +306,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                     child: Text(
                       _getCategoryLabel(category),
                       style: TextStyle(
-                        color: isSelected ? AppColors.primary : AppColors.textSecondary,
+                        color: isSelected ? AppColors.primary : textSecondary,
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         fontSize: 12,
                       ),
@@ -280,15 +317,59 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Priority field
-            const Text(
-              'Priority',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+            // Recurrence field
+            _buildLabel('Repeat', textSecondary),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _recurrenceOptions.map((option) {
+                final isSelected = _selectedRecurrence == option['value'];
+                return InkWell(
+                  onTap: () => setState(() {
+                    _selectedRecurrence = option['value'];
+                  }),
+                  borderRadius: BorderRadius.circular(12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? AppColors.primary.withOpacity(0.2)
+                          : surfaceElevated,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primary : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          option['icon'],
+                          size: 16,
+                          color: isSelected ? AppColors.primary : textSecondary,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          option['label'],
+                          style: TextStyle(
+                            color: isSelected ? AppColors.primary : textSecondary,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             ),
+            const SizedBox(height: 20),
+
+            // Priority field
+            _buildLabel('Priority', textSecondary),
             const SizedBox(height: 8),
             Row(
               children: _priorities.map((priority) {
@@ -312,7 +393,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                         decoration: BoxDecoration(
                           color: isSelected
                               ? color.withOpacity(0.2)
-                              : AppColors.cardBackground,
+                              : surfaceElevated,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isSelected ? color : Colors.transparent,
@@ -323,9 +404,8 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                           child: Text(
                             priority[0].toUpperCase() + priority.substring(1),
                             style: TextStyle(
-                              color: isSelected ? color : AppColors.textSecondary,
-                              fontWeight:
-                                  isSelected ? FontWeight.bold : FontWeight.normal,
+                              color: isSelected ? color : textSecondary,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
                         ),
@@ -337,15 +417,59 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Due date field
-            const Text(
-              'Due Date',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+            // Tags field
+            _buildLabel('Tags', textSecondary),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _tagController,
+                    style: TextStyle(color: textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'Add tag...',
+                      prefixIcon: const Icon(Icons.add, size: 20),
+                      filled: true,
+                      fillColor: surfaceElevated,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    onSubmitted: (_) => _addTag(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _addTag,
+                  icon: const Icon(Icons.add_circle),
+                  color: AppColors.primary,
+                ),
+              ],
             ),
+            if (_selectedTags.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _selectedTags.map((tag) {
+                  return Chip(
+                    label: Text(
+                      tag,
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    backgroundColor: AppColors.info.withOpacity(0.2),
+                    deleteIcon: const Icon(Icons.close, size: 16),
+                    onDeleted: () => _removeTag(tag),
+                    side: const BorderSide(color: AppColors.info),
+                  );
+                }).toList(),
+              ),
+            ],
+            const SizedBox(height: 20),
+
+            // Due date field
+            _buildLabel('Due Date', textSecondary),
             const SizedBox(height: 8),
             InkWell(
               onTap: _selectDueDate,
@@ -353,7 +477,7 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
+                  color: surfaceElevated,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -370,14 +494,14 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                           : 'Select due date',
                       style: TextStyle(
                         color: _selectedDueDate != null
-                            ? AppColors.textPrimary
+                            ? textPrimary
                             : AppColors.textHint,
                       ),
                     ),
                     const Spacer(),
                     if (_selectedDueDate != null)
                       IconButton(
-                        onPressed: () => setState(() => _selectedDueDate = null),
+                        onPressed: _clearDueDate,
                         icon: const Icon(
                           Icons.clear,
                           color: AppColors.textSecondary,
@@ -390,6 +514,57 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
                 ),
               ),
             ),
+
+            // Reminder section
+            if (_selectedDueDate != null) ...[
+              const SizedBox(height: 20),
+              _buildLabel('Reminder', textSecondary),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                title: Text(
+                  'Enable Reminder',
+                  style: TextStyle(color: textPrimary),
+                ),
+                subtitle: Text(
+                  'Notify $_reminderMinutes minutes before',
+                  style: TextStyle(color: textSecondary),
+                ),
+                value: _reminderEnabled,
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (value) {
+                  setState(() {
+                    _reminderEnabled = value;
+                  });
+                },
+              ),
+              if (_reminderEnabled)
+                Wrap(
+                  spacing: 8,
+                  children: _reminderOptions.map((minutes) {
+                    final isSelected = _reminderMinutes == minutes;
+                    return ChoiceChip(
+                      label: Text(
+                        _formatReminderMinutes(minutes),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isSelected ? Colors.white : textSecondary,
+                        ),
+                      ),
+                      selected: isSelected,
+                      selectedColor: AppColors.primary,
+                      backgroundColor: surfaceElevated,
+                      onSelected: (selected) {
+                        if (selected) {
+                          setState(() {
+                            _reminderMinutes = minutes;
+                          });
+                        }
+                      },
+                    );
+                  }).toList(),
+                ),
+            ],
             const SizedBox(height: 32),
 
             // Delete button
@@ -417,6 +592,17 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
     );
   }
 
+  Widget _buildLabel(String text, Color color) {
+    return Text(
+      text,
+      style: TextStyle(
+        color: color,
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
   void _showDeleteConfirmation() {
     showDialog(
       context: context,
@@ -437,9 +623,9 @@ class _EditTaskScreenState extends State<EditTaskScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(context);
               context.read<TaskProvider>().deleteTask(widget.task.id);
-              Navigator.pop(context); // Close edit screen
+              Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),

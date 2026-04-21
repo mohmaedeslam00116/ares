@@ -5,28 +5,36 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'providers/task_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/notification_provider.dart';
 import 'models/task.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   try {
-    // Set system UI overlay style
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        systemNavigationBarColor: AppColors.background,
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
-    
     // Initialize Hive
     await Hive.initFlutter();
     Hive.registerAdapter(TaskAdapter());
     await Hive.openBox<Task>('tasks');
-    
-    runApp(const AresApp());
+
+    // Initialize Theme Provider
+    final themeProvider = ThemeProvider();
+    await themeProvider.init();
+
+    // Initialize Notification Service
+    final notificationService = NotificationService();
+    await notificationService.init();
+    await notificationService.requestPermissions();
+
+    // Initialize Task Provider
+    final taskProvider = TaskProvider();
+    await taskProvider.loadTasks();
+
+    runApp(AresApp(
+      themeProvider: themeProvider,
+      taskProvider: taskProvider,
+    ));
   } catch (e) {
     // Handle initialization errors
     debugPrint('Initialization error: $e');
@@ -35,21 +43,33 @@ void main() async {
 }
 
 class AresApp extends StatelessWidget {
-  const AresApp({super.key});
+  final ThemeProvider themeProvider;
+  final TaskProvider taskProvider;
+
+  const AresApp({
+    super.key,
+    required this.themeProvider,
+    required this.taskProvider,
+  });
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => TaskProvider()..loadTasks(),
-        ),
+        ChangeNotifierProvider.value(value: themeProvider),
+        ChangeNotifierProvider.value(value: taskProvider),
       ],
-      child: MaterialApp(
-        title: 'ARES',
-        theme: AppTheme.darkTheme,
-        home: const HomeScreen(),
-        debugShowCheckedModeBanner: false,
+      child: Consumer<ThemeProvider>(
+        builder: (context, theme, _) {
+          return MaterialApp(
+            title: 'ARES',
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: theme.themeMode,
+            home: const HomeScreen(),
+            debugShowCheckedModeBanner: false,
+          );
+        },
       ),
     );
   }
@@ -57,14 +77,16 @@ class AresApp extends StatelessWidget {
 
 class ErrorApp extends StatelessWidget {
   final String errorMessage;
-  
+
   const ErrorApp({super.key, required this.errorMessage});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'ARES - Error',
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.dark,
       home: Scaffold(
         body: Center(
           child: Padding(
@@ -74,7 +96,7 @@ class ErrorApp extends StatelessWidget {
               children: [
                 const Icon(
                   Icons.error_outline,
-                  color: Colors.red,
+                  color: AppColors.error,
                   size: 64,
                 ),
                 const SizedBox(height: 16),
@@ -91,7 +113,7 @@ class ErrorApp extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
