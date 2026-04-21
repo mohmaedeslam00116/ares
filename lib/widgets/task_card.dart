@@ -43,7 +43,6 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
-  // Calculate due date status
   Color _getDueDateColor() {
     if (widget.task.dueDate == null) return AppColors.textTertiary;
     
@@ -52,9 +51,9 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
     final dueDay = DateTime(widget.task.dueDate!.year, widget.task.dueDate!.month, widget.task.dueDate!.day);
     final diff = dueDay.difference(today).inDays;
 
-    if (diff < 0) return AppColors.error; // Overdue
-    if (diff == 0) return AppColors.warning; // Today
-    if (diff <= 3) return AppColors.priorityMedium; // Soon
+    if (diff < 0) return AppColors.error;
+    if (diff == 0) return AppColors.warning;
+    if (diff <= 3) return AppColors.priorityMedium;
     return AppColors.textTertiary;
   }
 
@@ -73,12 +72,49 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
     return DateFormat('MMM d').format(widget.task.dueDate!);
   }
 
+  IconData _getRecurrenceIcon() {
+    switch (widget.task.recurrence) {
+      case RecurrenceType.daily:
+        return Icons.today;
+      case RecurrenceType.weekly:
+        return Icons.date_range;
+      case RecurrenceType.monthly:
+        return Icons.calendar_month;
+      case RecurrenceType.yearly:
+        return Icons.event_repeat;
+      default:
+        return Icons.repeat;
+    }
+  }
+
+  String _getRecurrenceText() {
+    switch (widget.task.recurrence) {
+      case RecurrenceType.daily:
+        return 'Daily';
+      case RecurrenceType.weekly:
+        return 'Weekly';
+      case RecurrenceType.monthly:
+        return 'Monthly';
+      case RecurrenceType.yearly:
+        return 'Yearly';
+      default:
+        return '';
+    }
+  }
+
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Task'),
-        content: Text('Are you sure you want to delete "${widget.task.title}"?'),
+        backgroundColor: AppColors.cardBackground,
+        title: const Text(
+          'Delete Task',
+          style: TextStyle(color: AppColors.textPrimary),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${widget.task.title}"?',
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -118,6 +154,7 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
     final priorityColor = AppColors.getPriorityColor(widget.task.priority);
     final dueDateColor = _getDueDateColor();
     final dueDateText = _getDueDateText();
+    final isRecurring = widget.task.isRecurring;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm / 2),
@@ -166,21 +203,57 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
-                      AnimatedDefaultTextStyle(
-                        duration: const Duration(milliseconds: 200),
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
-                          decoration: isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
-                          decorationColor: AppColors.textSecondary,
-                        ),
-                        child: Text(
-                          widget.task.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      // Title row with badges
+                      Row(
+                        children: [
+                          Expanded(
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 200),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: isCompleted ? AppColors.textSecondary : AppColors.textPrimary,
+                                decoration: isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
+                                decorationColor: AppColors.textSecondary,
+                              ),
+                              child: Text(
+                                widget.task.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          // Recurring indicator
+                          if (isRecurring)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                              ),
+                              child: Icon(
+                                _getRecurrenceIcon(),
+                                size: 14,
+                                color: AppColors.info,
+                              ),
+                            ),
+                          // Reminder indicator
+                          if (widget.task.hasReminder && !isCompleted)
+                            Container(
+                              margin: const EdgeInsets.only(left: 4),
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                              ),
+                              child: const Icon(
+                                Icons.notifications_active,
+                                size: 14,
+                                color: AppColors.warning,
+                              ),
+                            ),
+                        ],
                       ),
 
                       // Description
@@ -199,22 +272,59 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
                         ),
                       ],
 
-                      // Due date
-                      if (dueDateText.isNotEmpty) ...[
+                      // Tags
+                      if (widget.task.tags.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.sm),
-                        Row(
-                          children: [
-                            Icon(Icons.schedule, size: 14, color: dueDateColor),
-                            const SizedBox(width: 4),
-                            Text(
-                              dueDateText,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: dueDateColor,
-                                fontWeight: FontWeight.w500,
+                        Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: widget.task.tags.take(3).map((tag) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.info.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
                               ),
-                            ),
-                            const SizedBox(width: AppSpacing.sm),
+                              child: Text(
+                                '#$tag',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: isCompleted
+                                      ? AppColors.textSecondary
+                                      : AppColors.info,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+
+                      // Due date, priority, recurrence row
+                      if (dueDateText.isNotEmpty || widget.task.category != null) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.xs,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            // Due date
+                            if (dueDateText.isNotEmpty)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.schedule, size: 14, color: dueDateColor),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    dueDateText,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: dueDateColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             // Priority badge
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -231,6 +341,40 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
                                 ),
                               ),
                             ),
+                            // Recurrence badge
+                            if (isRecurring)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.info.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                ),
+                                child: Text(
+                                  _getRecurrenceText(),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.info,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            // Category badge
+                            if (widget.task.category != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                ),
+                                child: Text(
+                                  widget.task.category!,
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                           ],
                         ),
                       ],
@@ -260,7 +404,6 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
       builder: (context, provider, _) {
         final card = _buildCard(provider);
 
-        // Apply animation if provided (for list animations)
         if (widget.animation != null) {
           return SizeTransition(
             sizeFactor: widget.animation!,
@@ -277,7 +420,6 @@ class _TaskCardState extends State<TaskCard> with SingleTickerProviderStateMixin
           );
         }
 
-        // Apply scale animation
         return ScaleTransition(
           scale: _scaleAnimation,
           child: card,
@@ -304,12 +446,18 @@ class SwipeableTaskCard extends StatelessWidget {
       key: Key(task.id),
       direction: DismissDirection.endToStart,
       confirmDismiss: (direction) async {
-        // Show confirmation dialog instead of direct delete
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Delete Task'),
-            content: Text('Are you sure you want to delete "${task.title}"?'),
+            backgroundColor: AppColors.cardBackground,
+            title: const Text(
+              'Delete Task',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            content: Text(
+              'Are you sure you want to delete "${task.title}"?',
+              style: const TextStyle(color: AppColors.textSecondary),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
