@@ -104,6 +104,8 @@ class NotificationService {
       tz.TZDateTime.from(reminderTime, tz.local),
       details,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
       payload: task.id,
     );
   }

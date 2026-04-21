@@ -84,8 +84,8 @@ class AppColors {
 
   // UI Element Colors
   static const Color divider = DarkColors.divider;
-  static const Color checkboxBorder = DarkColors.checkboxBorder;
-  static const Color checkboxBackground = DarkColors.checkboxBackground;
+  static const Color checkboxBorder = Color(0xFFBDBDBD);
+  static const Color checkboxBackground = Color(0xFFEEEEEE);
   static const Color ripple = Color(0x1AFFFFFF);
 
   // Gradients
