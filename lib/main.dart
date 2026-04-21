@@ -22,13 +22,9 @@ void main() async {
     final themeProvider = ThemeProvider();
     await themeProvider.init();
 
-    // Initialize Notification Service
-    final notificationService = NotificationService();
-    await notificationService.init();
-    await notificationService.requestPermissions();
-
-    // Initialize Task Provider
+    // Initialize Task Provider (this initializes both StorageService & NotificationService)
     final taskProvider = TaskProvider();
+    await taskProvider.init();
     await taskProvider.loadTasks();
 
     runApp(AresApp(
